@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    　<script src="http://libs.baidu.com/jquery/2.1.4/jquery.min.js"></script>
+<!--    　<script src="/js/jquery-3.1.1.min.js"></script>-->
+    <title>在线文本正则替换</title>
+</head>
+<body>
+<p>选择文本文件，文件不上传服务器，仅在浏览器使用js处理</p>
+<input id="text_file" type="file" onchange="onChooseFile(this)">
+<br>
+文件名：<input type="text" id="showFileName">
+<br>
+<div>
+    匹配规则<input type="text" id="matchingRule">
+    结果规则<input type="text" id="resultRule">
+    <br>
+    <button onclick="re()">开始</button>
+
+    <button onclick="out()">导出</button>
+</div>
+<p id="reInfo"></p>
+<div>
+    <textarea id="sourceText" rows="20">
+
+    </textarea>
+    <textarea id="replaceText" readonly rows="20">
+
+    </textarea>
+</div>
+
+<script type="application/javascript">
+    function onChooseFile(input) {
+        try{
+            //支持chrome IE10
+            let text = null;
+            if (input.files.length <=0 || input.files.length >1){
+                alert("请选择一个文本文件");
+                return;
+            }
+            var file = input.files[0];
+            let fileName = file.name;
+            if (window.FileReader) {
+                var file = input.files[0];
+                var reader = new FileReader();
+                reader.onload = function() {
+                    text = this.result;
+                    showText(fileName, text, null);
+                    console.log(fileName);
+                    console.log(text);
+                };
+                reader.readAsText(file);
+                return;
+            }
+            //支持IE 7 8 9 10
+            else if (typeof window.ActiveXObject != 'undefined'){
+                var xmlDoc;
+                xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+                xmlDoc.async = false;
+                xmlDoc.load(input.value);
+                text = xmlDoc.xml;
+            }
+            //支持FF
+            else if (document.implementation && document.implementation.createDocument) {
+                var xmlDoc;
+                xmlDoc = document.implementation.createDocument("", "", null);
+                xmlDoc.async = false;
+                xmlDoc.load(input.value);
+                text = xmlDoc.xml;
+            } else {
+                alert('读取文件失败');
+                return;
+            }
+            showText(fileName, text, null);
+            console.log(fileName);
+            console.log(text);
+        }catch (e) {
+            $('#resultRule').text(e.toString());
+            throw e;
+        }
+    }
+
+    function showText(fileName, text, replaceText) {
+        try{
+            if(fileName == null || fileName.replace(' ', '').length <=0){
+                fileName = '未知名文件';
+            }
+            if(text == null || text.length <= 0 ){
+                text = '';
+            }
+            $('#showFileName').val(fileName);
+            $('#sourceText').text(text);
+            $('#replaceText').text(replaceText);
+        }catch (e) {
+            $('#resultRule').text(e.toString());
+            throw e;
+        }
+    }
+
+    function re() {
+        try{
+            let fileName  = $('#showFileName').val();
+            let text = $('#sourceText').val();
+            let matchRule = $('#matchingRule').val();
+            let resultRule  = $('#resultRule').val();
+            console.log(fileName);
+            console.log(text);
+            console.log(matchRule);
+            console.log(resultRule);
+            if(fileName == null || fileName.length<=0){
+                alert('请选择文本文件或输入文件名称');
+                return;
+            }else if(text == null || text.length<=0){
+                alert('原始文本为空，请选择非空文本或输入原始文本');
+                return;
+            }
+            console.log('开始正则替换');
+
+            let matchRe = RegExp(matchRule, "gim");
+            let rs = matchRe.exec(text);
+            let length = rs == null? 0:rs.length;
+            let rsStr = '';
+            for (let i = 0; i <length ; i++) {
+                rsStr = rsStr+rs[i];
+                if(i>20 && i<length+1){
+                    rsStr = rsStr+'...';
+                    break;
+                }
+            }
+            $('#reInfo').html('匹配到了'+length+'条记录:'+rsStr);
+            let resultText = text.replaceAll(matchRe, resultRule);
+            $('#replaceText').text(resultText);
+        }catch (e) {
+            $('#replaceText').text(e.toString());
+            throw e;
+        }
+    }
+    function out() {
+       try{
+           let fileName = $('#showFileName').val();
+           let text = $('#replaceText').text();
+           if(fileName == null || fileName.length <=0){
+               alert('请输入文件名');
+               return;
+           }
+           if(text == null){
+               text = '';
+           }
+           let element = document.createElement('a');
+           element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+           element.setAttribute('download', fileName);
+
+           element.style.display = 'none';
+           document.body.appendChild(element);
+
+           element.click();
+
+           document.body.removeChild(element);
+       }catch (e) {
+           $('#replaceText').text(e.toString());
+           throw e;
+       }
+    }
+</script>
+</body>
+</html>
